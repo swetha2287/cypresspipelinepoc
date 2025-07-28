@@ -7,6 +7,10 @@ module.exports = defineConfig({
   screenshotOnRunFailure:true,
   reporter:'cypress-Mochawesome-reporter',
   reporterOptions:{
+    reportDir:"cypress/reports/mochawesome-report",
+    "overwrite": false,
+    "html": true,
+    "json": true,
     charts:true,
     reportPageTitle: "wknd site test results",
     embeddedScreenshots: true,
