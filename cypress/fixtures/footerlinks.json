@@ -1,0 +1,13 @@
+{
+  "internalLinks": [
+    { "label": "Magazine", "path": "/magzine" },
+    { "label": "Adventures","path": "/adventures"},
+    { "label": "FAQ's", "path": "/faqs"},
+    { "label": "About Us", "path": "/about-us" }    
+  ],
+  "socialLinks": [    
+    { "platform": "Facebook", "url": "https://wknd.site/us/en.html#facebookwknd" },
+    { "platform": "Twitter", "url": "https://wknd.site/us/en.html#twitterWKND" },
+    { "platform": "Instagram", "url": "https://wknd.site/us/en.html#instagramwknd" }
+  ]
+}
