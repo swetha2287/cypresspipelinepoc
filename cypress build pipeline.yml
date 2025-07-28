@@ -21,7 +21,7 @@ jobs:
     inputs:
       command: ci
       verbose: false
-  - task: mochawesome 
+
   - script: npx cypress run
     displayName: 'Run Cypress tests with Mochawesome'
   - task: PublishPipelineArtifact@1
