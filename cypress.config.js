@@ -6,7 +6,7 @@ module.exports = defineConfig({
   viewportWidth: 1920,
   video:true,
   screenshotOnRunFailure:true,
-  reporter:'cypress-Mochawesome-reporter',
+  reporter:'cypress-mochawesome-reporter',
   reporterOptions:{
     reportDir:"cypress/reports/mochawesome-report",
     "overwrite": false,
