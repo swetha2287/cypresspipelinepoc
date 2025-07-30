@@ -16,7 +16,9 @@ module.exports = defineConfig({
     reportPageTitle: "wknd site test results",
     embeddedScreenshots: true,
     inlineAssets:true,
-
+    reportFilename: 'smoketest_[datetime]-report',
+    // Specify the format of the timestamp: 'longDate', 'isoDateTime', or custom dateformat string
+    timestamp: 'isoDateTime'
   },
   e2e: {
     setupNodeEvents(on, config) {
