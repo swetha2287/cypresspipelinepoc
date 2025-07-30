@@ -23,18 +23,10 @@ jobs:
       verbose: false
 
   - script: npx cypress run
-       npx cypress run --reporter mocha-multi-reporters --reporter-options configFile=reporter-config.json  
-    displayName: 'Run Cypress tests with Multi reporters'
-     
-  
+    displayName: 'Run cypress tests' 
   - task: PublishPipelineArtifact@1
     displayName: 'Publish Mochawesome HTML report'
     inputs:
       targetPath: 'cypress/reports/mochawesome-report'   # exact path to your report folder
       artifact: 'mochawesome-report'
       publishLocation: 'pipeline'
-  
-  - task: PublishTestResults@2
-    inputs:
-      testResultsFiles: 'cypress/reports/junit/*.xml'
-      testRunTitle: 'Cypress JUnit Test Results'
