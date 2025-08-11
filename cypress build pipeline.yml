@@ -1,32 +1,96 @@
-resources:
-  repositories:
-  - repository: self
-    type: git
-    ref: main
-jobs:
-- job: Job_1
-  displayName: Agent job 1
-  pool:
-    vmImage: ubuntu-latest
-  steps:
-  - checkout: self
-    clean: true
-    fetchTags: false
-  - task: NodeTool@0
-    displayName: Use Node 20.x
-    inputs:
-      versionSpec: 20.x
-  - task: Npm@1
-    displayName: npm ci
-    inputs:
-      command: ci
-      verbose: false
+# resources:
+#   repositories:
+#   - repository: self
+#     type: git
+#     ref: main
+# jobs:
+# - job: Job_1
+#   displayName: Agent job 1
+#   pool:
+#     vmImage: ubuntu-latest
+#   steps:
+#   - checkout: self
+#     clean: true
+#     fetchTags: false
+#   - task: NodeTool@0
+#     displayName: Use Node 20.x
+#     inputs:
+#       versionSpec: 20.x
+#   - task: Npm@1
+#     displayName: npm ci
+#     inputs:
+#       command: ci
+#       verbose: false
 
-  - script: npx cypress run
-    displayName: 'Run cypress tests' 
-  - task: PublishPipelineArtifact@1
-    displayName: 'Publish Mochawesome HTML report'
-    inputs:
-      targetPath: 'cypress/reports/mochawesome-report'   # exact path to your report folder
-      artifact: 'mochawesome-report'
-      publishLocation: 'pipeline'
+#   - script: npx cypress run
+#     displayName: 'Run cypress tests' 
+#   - task: PublishPipelineArtifact@1
+#     displayName: 'Publish Mochawesome HTML report'
+#     inputs:
+#       targetPath: 'cypress/reports/mochawesome-report'   # exact path to your report folder
+#       artifact: 'mochawesome-report'
+#       publishLocation: 'pipeline'
+
+trigger: none
+# - main # Run on pushes to the main branch
+
+pr: none
+# - main # Run on pull requests targeting the main branch
+
+pool:
+  vmImage: 'ubuntu-latest' # Use a Linux agent
+
+stages:
+- stage: Test
+  displayName: 'Run Cypress Tests'
+  jobs:
+  - job: CypressTestExecution
+    displayName: 'Execute Cypress UI Tests'
+    steps:
+
+    # 1. Set up Node.js environment
+    - task: NodeTool@0
+      displayName: 'Install Node.js'
+      inputs:
+        versionSpec: '20.x' # Use a specific LTS version of Node
+
+    # 2. Cache npm packages for faster builds
+    - task: Cache@2
+      displayName: 'Cache node_modules'
+      inputs:
+        key: 'npm | $(Agent.OS) | package-lock.json' # Cache key
+        path: '$(npm_config_cache)' # Path to the npm cache folder
+        restoreKeys: |
+          npm | $(Agent.OS)
+
+    # 3. Install project dependencies securely
+    - script: npm ci
+      displayName: 'Install npm dependencies'
+
+    # 4. Run Cypress tests
+    # This step assumes you have a script `cy:run` in your package.json
+    # The `CYPRESS_RECORD_KEY` is a secret variable for recording to Cypress Cloud (Optional)
+    - script: npm run cy:run
+      displayName: 'Run Cypress End-to-End Tests'
+    # env:
+    #    CYPRESS_RECORD_KEY: $(CYPRESS_RECORD_KEY) # Maps the secret variable
+
+    # 5. Publish Test Results (JUnit format) - This is critical for the "Tests" tab
+    - task: PublishTestResults@2
+      displayName: 'Publish Test Results'
+      condition: succeededOrFailed() # Run this step even if tests fail
+      inputs:
+        testResultsFormat: 'Junit'
+        testResultsFiles: '**/results-*.xml' # Search for all JUnit  files
+        searchFolder: '$(System.DefaultWorkingDirectory)/cypress/results/junit'
+        mergeTestResults: true
+        failTaskOnFailedTests: true # Fail the pipeline if any tests failed
+        testRunTitle: 'Cypress Test Results'
+
+    # 6.  Publish the human-readable HTML report and artifacts for manual review
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish Cypress HTML Report and Artifacts'
+      condition: always() # Always publish artifacts for debugging
+      inputs:
+        targetPath: '$(System.DefaultWorkingDirectory)/cypress/results' # The folder with your reports
+        artifactName: 'CypressTestReports' # Name of the artifact in the build summary
