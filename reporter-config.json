@@ -1,0 +1,22 @@
+{
+  "reporterEnabled": "mochawesome, mocha-junit-reporter",
+
+  "mochawesomeReporterOptions": {
+    "reportDir": "cypress/reports/html/.jsons",
+    "reportFilename": "smoketest_[datetime]-report",
+    "overwrite": false,
+    "html": false,
+    "json": true,
+    "charts": true,
+    "reportPageTitle": "wknd site test results",
+    "embeddedScreenshots": true,
+    "inlineAssets": true,
+
+     "showPassed": true,  
+    "showPending": true
+  },
+
+  "mochaJunitReporterReporterOptions": {
+    "mochaFile": "cypress/results/junit/results-[hash].xml"
+  }
+}

@@ -1,30 +1,25 @@
 const { defineConfig } = require("cypress");
-const Mochawesome = require("mochawesome");
+
 module.exports = defineConfig({
   
   viewportHeight:1080,
   viewportWidth: 1920,
-  video:true,
-  screenshotOnRunFailure:true,
-  reporter:'cypress-mochawesome-reporter',
-  reporterOptions:{
-    reportDir:"cypress/reports/mochawesome-report",
-    "overwrite": false,
-    "html": true,
-    "json": true,
-    charts:true,
-    reportPageTitle: "wknd site test results",
-    embeddedScreenshots: true,
-    inlineAssets:true,
-    reportFilename: 'smoketest_[datetime]-report',
-    // Specify the format of the timestamp: 'longDate', 'isoDateTime', or custom dateformat string
-    timestamp: 'isoDateTime'
+  
+   
+    
+  // 1. Tell Cypress to use the multi-reporter as its main entry point
+  reporter: 'cypress-multi-reporters',
+  
+  // 2. Point it to our new, clean configuration file
+  reporterOptions: {
+    configFile: 'reporter-config.json'
   },
+  
   e2e: {
     setupNodeEvents(on, config) {
-      // implement node event listeners here
+      // 3. The Mochawesome plugin is STILL needed here.
+      // Its job is now simply to merge the HTML report at the end.
       require('cypress-mochawesome-reporter/plugin')(on);
-
     },
   },
 });
