@@ -68,12 +68,16 @@ stages:
       displayName: 'Install npm dependencies'
 
     # 4. Run Cypress tests
-    # This step assumes you have a script `cy:run` in your package.json
-    # The `CYPRESS_RECORD_KEY` is a secret variable for recording to Cypress Cloud (Optional)
+    # This step assumes you have a script `cy:run` in your package.json   
     - script: npm run cy:run
-      displayName: 'Run Cypress End-to-End Tests'
-    # env:
-    #    CYPRESS_RECORD_KEY: $(CYPRESS_RECORD_KEY) # Maps the secret variable
+      displayName: 'Run Cypress End-to-End Tests'   
+    
+    - script: |
+        npx mochawesome-merge cypress/reports/html/.jsons/*.json > cypress/reports/html/mochawesome.json
+        npx marge cypress/reports/html/mochawesome.json \
+          --reportDir cypress/reports/html \
+          --reportFilename "smoketest_$(date +%Y-%m-%d_%H-%M)-report"
+      displayName: 'Merge JSON Reports & Create HTML Report'
 
     # 5. Publish Test Results (JUnit format) - This is critical for the "Tests" tab
     - task: PublishTestResults@2
@@ -92,5 +96,12 @@ stages:
       displayName: 'Publish Cypress HTML Report and Artifacts'
       condition: always() # Always publish artifacts for debugging
       inputs:
-        targetPath: '$(System.DefaultWorkingDirectory)/cypress/results' # The folder with your reports
-        artifactName: 'CypressTestReports' # Name of the artifact in the build summary
+        targetPath: '$(System.DefaultWorkingDirectory)/cypress/reports/html/.jsons' # The folder with your reports
+        artifactName: 'CypressHTMLTestReports' # Name of the artifact in the build summary
+
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish Cypress Debug Artifacts'
+      condition: failed()
+      inputs:
+        targetPath: '$(System.DefaultWorkingDirectory)/cypress/screenshots'
+        artifactName: 'CypressScreenshots'

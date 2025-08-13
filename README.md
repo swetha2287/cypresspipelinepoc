@@ -1,2 +1,0 @@
-# cypresspipelinepoc
-cypresspipelinepoc
