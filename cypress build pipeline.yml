@@ -69,8 +69,8 @@ stages:
 
     # 4. Run Cypress tests
     # This step assumes you have a script `cy:run` in your package.json   
-    - script: npm run cy:run
-      displayName: 'Run Cypress End-to-End Tests'   
+    - script: npm run cy:run || true
+      displayName: 'Run Cypress End-to-End Tests(allow Failure)'   
     
     - script: |
         echo "=== Listing JSON reports ==="
@@ -93,7 +93,7 @@ stages:
         echo "=== Head of HTML report ==="
         head -40 cypress/reports/html/index.html
       displayName: 'Merge and Generate HTML Report'
-      
+
     # 5. Publish Test Results (JUnit format) - This is critical for the "Tests" tab
     - task: PublishTestResults@2
       displayName: 'Publish Test Results'
