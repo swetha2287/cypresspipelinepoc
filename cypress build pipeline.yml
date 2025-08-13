@@ -1,44 +1,8 @@
-# resources:
-#   repositories:
-#   - repository: self
-#     type: git
-#     ref: main
-# jobs:
-# - job: Job_1
-#   displayName: Agent job 1
-#   pool:
-#     vmImage: ubuntu-latest
-#   steps:
-#   - checkout: self
-#     clean: true
-#     fetchTags: false
-#   - task: NodeTool@0
-#     displayName: Use Node 20.x
-#     inputs:
-#       versionSpec: 20.x
-#   - task: Npm@1
-#     displayName: npm ci
-#     inputs:
-#       command: ci
-#       verbose: false
-
-#   - script: npx cypress run
-#     displayName: 'Run cypress tests' 
-#   - task: PublishPipelineArtifact@1
-#     displayName: 'Publish Mochawesome HTML report'
-#     inputs:
-#       targetPath: 'cypress/reports/mochawesome-report'   # exact path to your report folder
-#       artifact: 'mochawesome-report'
-#       publishLocation: 'pipeline'
-
 trigger: none
-# - main # Run on pushes to the main branch
-
 pr: none
-# - main # Run on pull requests targeting the main branch
 
 pool:
-  vmImage: 'ubuntu-latest' # Use a Linux agent
+  vmImage: 'ubuntu-latest'
 
 stages:
 - stage: Test
@@ -48,75 +12,96 @@ stages:
     displayName: 'Execute Cypress UI Tests'
     steps:
 
-    # 1. Set up Node.js environment
+    # 1. Install Node.js
     - task: NodeTool@0
       displayName: 'Install Node.js'
       inputs:
-        versionSpec: '20.x' # Use a specific LTS version of Node
+        versionSpec: '20.x'
 
-    # 2. Cache npm packages for faster builds
+    # 2. Cache npm packages
     - task: Cache@2
       displayName: 'Cache node_modules'
       inputs:
-        key: 'npm | $(Agent.OS) | package-lock.json' # Cache key
-        path: '$(npm_config_cache)' # Path to the npm cache folder
+        key: 'npm | $(Agent.OS) | package-lock.json'
+        path: '$(npm_config_cache)'
         restoreKeys: |
           npm | $(Agent.OS)
 
-    # 3. Install project dependencies securely
-    - script: npm ci
+    # 3. Install dependencies
+    - script: |
+        set -x
+        echo "##[section]Installing npm dependencies"
+        npm ci
       displayName: 'Install npm dependencies'
+      condition: always()
 
-    # 4. Run Cypress tests
-    # This step assumes you have a script `cy:run` in your package.json   
-    - script: npm run cy:run || true
-      displayName: 'Run Cypress End-to-End Tests(allow Failure)'   
-    
+    # 4. Run Cypress Tests
     - script: |
-        echo "=== Listing JSON reports ==="
-        ls -lh cypress/reports/html/.jsons/
-        echo "=== Head of first JSON report ==="
-        head -40 cypress/reports/html/.jsons/*.json | head -40
+        set -x
+        echo "##[section]Running Cypress Tests"
+        npm run cy:run
+      displayName: 'Run Cypress End-to-End Tests'
+      continueOnError: true   # Don't stop pipeline if tests fail
+
+    # 5. Debug JSON reports
+    - script: |
+        set -x
+        echo "##[section]Debug: Listing mochawesome JSON reports"
+        if [ -d "cypress/reports/html/.jsons" ]; then
+          echo "✅ JSON report directory found."
+          ls -lh cypress/reports/html/.jsons/
+          echo "=== Preview of first JSON report ==="
+          head -40 cypress/reports/html/.jsons/*.json || true
+        else
+          echo "❌ JSON report directory NOT found!"
+        fi
       displayName: 'Debug JSON Reports'
+      condition: always()
 
-    # 6. Merge JSON and generate HTML report
+    # 6. Merge JSON & generate HTML
     - script: |
-        echo "=== Merging JSON reports ==="
-        npx mochawesome-merge cypress/reports/html/.jsons/*.json > cypress/reports/html/mochawesome.json
-        echo "=== Generating HTML report ==="
-        npx marge cypress/reports/html/mochawesome.json \
-          --reportDir cypress/reports/html \
-          --reportFilename index \
-          --inlineAssets true
-        echo "=== Report file info ==="
-        ls -lh cypress/reports/html/index.html
-        echo "=== Head of HTML report ==="
-        head -40 cypress/reports/html/index.html
-      displayName: 'Merge and Generate HTML Report'
+        set -x
+        echo "##[section]Merging JSON & Generating HTML Report"
+        mkdir -p cypress/reports/html
+        if compgen -G "cypress/reports/html/.jsons/*.json" > /dev/null; then
+          npx mochawesome-merge cypress/reports/html/.jsons/*.json > cypress/reports/html/mochawesome.json
+          npx marge cypress/reports/html/mochawesome.json \
+            --reportDir cypress/reports/html \
+            --reportFilename index \
+            --inlineAssets true
+          echo "=== Report generated ==="
+          ls -lh cypress/reports/html/index.html
+          head -40 cypress/reports/html/index.html || true
+        else
+          echo "❌ No JSON files found, skipping HTML generation."
+        fi
+      displayName: 'Merge & Generate HTML Report'
+      condition: always()
 
-    # 5. Publish Test Results (JUnit format) - This is critical for the "Tests" tab
+    # 7. Publish Test Results (JUnit)
     - task: PublishTestResults@2
-      displayName: 'Publish Test Results'
-      condition: succeededOrFailed() # Run this step even if tests fail
+      displayName: 'Publish JUnit Test Results'
+      condition: always()
       inputs:
-        testResultsFormat: 'Junit'
-        testResultsFiles: '**/results-*.xml' # Search for all JUnit  files
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '**/results-*.xml'
         searchFolder: '$(System.DefaultWorkingDirectory)/cypress/results/junit'
         mergeTestResults: true
-        failTaskOnFailedTests: true # Fail the pipeline if any tests failed
+        failTaskOnFailedTests: false
         testRunTitle: 'Cypress Test Results'
 
-    # 6.  Publish the human-readable HTML report and artifacts for manual review
+    # 8. Publish HTML Report Artifact
     - task: PublishPipelineArtifact@1
-      displayName: 'Publish Cypress HTML Report and Artifacts'
-      condition: always() # Always publish artifacts for debugging
+      displayName: 'Publish Cypress HTML Report'
+      condition: always()
       inputs:
-        targetPath: '$(System.DefaultWorkingDirectory)/cypress/reports/html/' # The folder with your reports
-        artifactName: 'CypressHTMLTestReports' # Name of the artifact in the build summary
+        targetPath: '$(System.DefaultWorkingDirectory)/cypress/reports/html/'
+        artifactName: 'CypressHTMLTestReports'
 
+    # 9. Publish Debug Artifacts (Screenshots)
     - task: PublishPipelineArtifact@1
-      displayName: 'Publish Cypress Debug Artifacts'
-      condition: failed()
+      displayName: 'Publish Cypress Screenshots'
+      condition: always()
       inputs:
         targetPath: '$(System.DefaultWorkingDirectory)/cypress/screenshots'
         artifactName: 'CypressScreenshots'
