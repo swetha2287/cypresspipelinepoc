@@ -97,11 +97,4 @@ stages:
       inputs:
         targetPath: '$(System.DefaultWorkingDirectory)/cypress/reports/html/'
         artifactName: 'CypressHTMLTestReports'
-
-    # 9. Publish Debug Artifacts (Screenshots)
-    - task: PublishPipelineArtifact@1
-      displayName: 'Publish Cypress Screenshots'
-      condition: always()
-      inputs:
-        targetPath: '$(System.DefaultWorkingDirectory)/cypress/screenshots'
-        artifactName: 'CypressScreenshots'
+    
