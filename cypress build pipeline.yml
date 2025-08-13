@@ -96,7 +96,7 @@ stages:
       displayName: 'Publish Cypress HTML Report and Artifacts'
       condition: always() # Always publish artifacts for debugging
       inputs:
-        targetPath: '$(System.DefaultWorkingDirectory)/cypress/reports/html/.jsons' # The folder with your reports
+        targetPath: '$(System.DefaultWorkingDirectory)/cypress/reports/html/' # The folder with your reports
         artifactName: 'CypressHTMLTestReports' # Name of the artifact in the build summary
 
     - task: PublishPipelineArtifact@1
