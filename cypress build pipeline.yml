@@ -73,17 +73,27 @@ stages:
       displayName: 'Run Cypress End-to-End Tests'   
     
     - script: |
+        echo "=== Listing JSON reports ==="
+        ls -lh cypress/reports/html/.jsons/
+        echo "=== Head of first JSON report ==="
+        head -40 cypress/reports/html/.jsons/*.json | head -40
+      displayName: 'Debug JSON Reports'
+
+    # 6. Merge JSON and generate HTML report
+    - script: |
+        echo "=== Merging JSON reports ==="
         npx mochawesome-merge cypress/reports/html/.jsons/*.json > cypress/reports/html/mochawesome.json
+        echo "=== Generating HTML report ==="
         npx marge cypress/reports/html/mochawesome.json \
           --reportDir cypress/reports/html \
-          --reportFilename "smoketest_$(date +%Y-%m-%d_%H-%M)-report"
-      displayName: 'Merge JSON Reports & Create HTML Report'
-
-    - script: |
-        echo "Waiting for 10 seconds to allow report generation to complete..."
-        sleep 10
-        displayName: 'Wait for Report Generation'
-
+          --reportFilename index \
+          --inlineAssets true
+        echo "=== Report file info ==="
+        ls -lh cypress/reports/html/index.html
+        echo "=== Head of HTML report ==="
+        head -40 cypress/reports/html/index.html
+      displayName: 'Merge and Generate HTML Report'
+      
     # 5. Publish Test Results (JUnit format) - This is critical for the "Tests" tab
     - task: PublishTestResults@2
       displayName: 'Publish Test Results'
