@@ -79,6 +79,11 @@ stages:
           --reportFilename "smoketest_$(date +%Y-%m-%d_%H-%M)-report"
       displayName: 'Merge JSON Reports & Create HTML Report'
 
+    - script: |
+        echo "Waiting for 10 seconds to allow report generation to complete..."
+        sleep 10
+        displayName: 'Wait for Report Generation'
+
     # 5. Publish Test Results (JUnit format) - This is critical for the "Tests" tab
     - task: PublishTestResults@2
       displayName: 'Publish Test Results'
