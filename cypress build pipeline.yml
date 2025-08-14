@@ -20,6 +20,27 @@ stages:
     - script: npm ci
       displayName: 'Install npm dependencies'
 
+    # --- THIS IS THE CRITICAL NEW DIAGNOSTIC STEP ---
+    - script: |
+        echo "========================================================"
+        echo "=== DIAGNOSTIC CHECK: Displaying config files        ==="
+        echo "========================================================"
+        echo ""
+        echo "Listing all files in the root directory..."
+        ls -la
+        
+        echo ""
+        echo "---"
+        echo "Displaying the contents of cypress.config.js that this pipeline WILL USE:"
+        echo "---"
+        cat cypress.config.js
+        echo ""
+        echo "---"
+        echo "Diagnostic check complete. Proceeding to test run..."
+        echo "========================================================"
+      displayName: 'Pre-Run Diagnostic Check'
+
+      
     # This is the CORRECT way to structure the script block.
     # The displayName is a property of the task, not inside the script.
     - script: |
