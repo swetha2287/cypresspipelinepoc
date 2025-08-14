@@ -38,7 +38,7 @@ module.exports = defineConfig({
     setupNodeEvents(on, config) {
       // 3. The Mochawesome plugin is STILL needed here.
       // Its job is now simply to merge the HTML report at the end.
-      require('cypress-mochawesome-reporter/plugin')(on);
+     // require('cypress-mochawesome-reporter/plugin')(on);
     },
   },
 });
