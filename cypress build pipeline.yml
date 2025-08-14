@@ -12,89 +12,52 @@ stages:
     displayName: 'Execute Cypress UI Tests'
     steps:
 
-    # 1. Install Node.js
     - task: NodeTool@0
       displayName: 'Install Node.js'
       inputs:
         versionSpec: '20.x'
 
-    # 2. Cache npm packages
-    - task: Cache@2
-      displayName: 'Cache node_modules'
-      inputs:
-        key: 'npm | $(Agent.OS) | package-lock.json'
-        path: '$(npm_config_cache)'
-        restoreKeys: |
-          npm | $(Agent.OS)
-
-    # 3. Install dependencies
-    - script: |
-        set -x
-        echo "##[section]Installing npm dependencies"
-        npm ci
+    - script: npm ci
       displayName: 'Install npm dependencies'
-      condition: always()
 
-    # 4. Run Cypress Tests
+    # This is the CORRECT way to structure the script block.
+    # The displayName is a property of the task, not inside the script.
     - script: |
-        set -x
-        echo "##[section]Running Cypress Tests"
+        echo "Starting Cypress tests..."
         npm run cy:run
-      displayName: 'Run Cypress End-to-End Tests'
-      continueOnError: true   # Don't stop pipeline if tests fail
-
-    # 5. Debug JSON reports
+        echo "Cypress command finished. Waiting 15 seconds for report plugin to complete."
+        sleep 15
+      displayName: 'Run Cypress & Wait for Report Plugin'
+      
+     # --- THIS IS THE CRITICAL NEW DEBUGGING STEP ---
     - script: |
-        set -x
-        echo "##[section]Debug: Listing mochawesome JSON reports"
-        if [ -d "cypress/reports/html/.jsons" ]; then
-          echo "✅ JSON report directory found."
-          ls -lh cypress/reports/html/.jsons/
-          echo "=== Preview of first JSON report ==="
-          head -40 cypress/reports/html/.jsons/*.json || true
+        echo "Cypress run finished. Now checking for the existence of the results folder..."
+        echo "Current directory: $(pwd)"
+        echo "Listing all contents of the project directory:"
+        ls -lR
+        
+        echo "---"
+        echo "Specifically checking for the 'cypress/results' directory..."
+        if [ -d "$(System.DefaultWorkingDirectory)/cypress/results" ]; then
+          echo "✅ SUCCESS: The 'cypress/results' directory was found!"
         else
-          echo "❌ JSON report directory NOT found!"
+          echo "❌ FAILURE: The 'cypress/results' directory DOES NOT EXIST. This is the root cause of the error."
         fi
-      displayName: 'Debug JSON Reports'
-      condition: always()
-
-    # 6. Merge JSON & generate HTML
-    - script: |
-        set -x
-        echo "##[section]Merging JSON & Generating HTML Report"
-        mkdir -p cypress/reports/html
-        if compgen -G "cypress/reports/html/.jsons/*.json" > /dev/null; then
-          npx mochawesome-merge cypress/reports/html/.jsons/*.json > cypress/reports/html/mochawesome.json
-          npx marge cypress/reports/html/mochawesome.json \
-            --reportDir cypress/reports/html \
-            --reportFilename index \
-            --inlineAssets true
-          echo "=== Report generated ==="
-          ls -lh cypress/reports/html/index.html
-          head -40 cypress/reports/html/index.html || true
-        else
-          echo "❌ No JSON files found, skipping HTML generation."
-        fi
-      displayName: 'Merge & Generate HTML Report'
-      condition: always()
-
-    # 7. Publish Test Results (JUnit)
+      displayName: 'Debug: Check for Report Directory'
+      condition: always() # Run this step even if the previous one fails
+      
     - task: PublishTestResults@2
-      displayName: 'Publish JUnit Test Results'
-      condition: always()
+      displayName: 'Publish JUnit XML Results'
+      condition: succeededOrFailed()
       inputs:
         testResultsFormat: 'JUnit'
         testResultsFiles: '**/results-*.xml'
-        searchFolder: '$(System.DefaultWorkingDirectory)/cypress/results/junit'
+        searchFolder: '$(System.DefaultWorkingDirectory)/cypress/results/junit' # Correct path
         mergeTestResults: true
-        failTaskOnFailedTests: false
-        testRunTitle: 'Cypress Test Results'
 
-    # 8. Publish HTML Report Artifact
     - task: PublishPipelineArtifact@1
-      displayName: 'Publish Cypress HTML Report'
+      displayName: 'Publish All Cypress Artifacts'
       condition: always()
       inputs:
-        targetPath: '$(System.DefaultWorkingDirectory)/cypress/reports/html/'
-        artifactName: 'CypressHTMLTestReports'
-    
+        targetPath: '$(System.DefaultWorkingDirectory)/cypress/results' # Correct path
+        artifactName: 'CypressExecutionArtifacts'

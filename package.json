@@ -1,18 +1,18 @@
 {
-  "name": "cypresspipelinepoc",
+  "name": "yamaha-motor-cypress-automation",
   "version": "1.0.0",
-  "description": "",
+  "description": "TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project.",
   "main": "index.js",
-  "scripts": {
-    "cy:run": "cypress run",
-    "cy:open": "cypress open"
-  },
+"scripts": {
+  "cy:run": "cypress run",
+  "cy:open": "cypress open"
+  
+},
+"keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "cypress": "^14.5.4",
-    "cypress-mochawesome-reporter": "^3.8.0",
-    "cypress-multi-reporters": "^2.0.5",
-    "mocha-junit-reporter": "^2.2.1"
+    "cypress": "^14.5.3",
+    "cypress-mochawesome-reporter": "^4.0.0"
   }
 }
